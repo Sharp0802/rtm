@@ -267,6 +267,8 @@ Context* ParseContext(const void* src, size_t nb);
 
 void ReleaseContext(Context* context);
 
+void ReleaseTrailer(ContextTrailer* trailer);
+
 void InspectRadiotap(const Context* src);
 
 #endif

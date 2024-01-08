@@ -18,41 +18,40 @@ void ParseBeacon(const void* src, size_t nb, Pointer mp, ContextTrailer* dst)
     U2 interval = *mp.U2++;
     U2 compat   = *mp.U2++;
     
+    U1 type;
+    U1 len;
+    
+    Pointer lmp;
+    memset(&lmp, 0, sizeof lmp);
+    
     dst->FrameType = CT_BEACON;
     memset(&dst->BeaconFrame, 0, sizeof dst->BeaconFrame);
     
     /* tagged params */
     for (; (mp.U1 - (const U1*)src) < (ssize_t)(nb - 4);)
     {
-	switch (*mp.U1++)
+	type = *mp.U1++;
+	len  = *mp.U1++;
+	lmp.V = mp.V;
+	mp.U1 += len;
+	
+	switch (type)
 	{
 	case BEACON_SSID:
 	{
-	    U1 len = *mp.U1++;
-	    
 	    char* buf = malloc(len + 1);
 	    strncpy(buf, (const char*)mp.U1, len);
 	    buf[len] = 0;
 	    
 	    printf(" %s", buf);
 	    
-	    mp.U1 += len;
 	    free(buf);
 	    break;
 	}
 	
-	/*
 	case BEACON_RSN:
 	{
 	    //TODO
-	}
-	*/
-	
-	default:
-	{
-	    U1 len = *mp.U1++;
-	    mp.U1 += len;
-	    break;
 	}
 	}
     }
@@ -78,6 +77,8 @@ Context* ParseContext(const void* src, size_t nb)
     Field                    field;
     size_t                   misaligned;
     void (* parser)(const void*, size_t, Pointer, ContextTrailer*);
+    U4 i;
+    U1 f;
     
     Context* root;
     Context* context;
@@ -112,14 +113,15 @@ Context* ParseContext(const void* src, size_t nb)
     
     /* parse fields */
     context = root = calloc(1, sizeof *context);
-    for (uint32_t i = 0; i < nFlag; ++i)
+    
+    for (i = 0; i < nFlag; ++i)
     {
 	if (i > 0)
 	    context = (context->Next = calloc(1, sizeof *context));
 	
 	context->Present = flags[i];
 	
-	for (U1 f = 0; f < 32; ++f)
+	for (f = 0; f < 32; ++f)
 	{
 	    if (~flags[i] & (1 << f))
 		continue;
@@ -193,13 +195,22 @@ E_SIZE:
     return root;
 }
 
+void ReleaseTrailer(ContextTrailer* trailer)
+{
+    if (!trailer)
+	return;
+    
+    // TODO
+    
+    free(trailer);
+}
+
 void ReleaseContext(Context* context)
 {
     if (!context)
 	return;
     
-    if (context->Trailer)
-    	free(context->Trailer);
+    ReleaseTrailer(context->Trailer);
     
     Context* tmp;
     do

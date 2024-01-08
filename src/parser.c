@@ -637,8 +637,9 @@ void InspectContextTrivial(const Context* src, U1 bit)
     case RT_VHT:
     {
 	VHT vht = src->VHT;
-	
 	U1 total;
+	U1 i;
+	
 	if (vht.Bandwidth > 10)
 	    total = 160;
 	else if (vht.Bandwidth > 3)
@@ -689,7 +690,7 @@ void InspectContextTrivial(const Context* src, U1 bit)
 		total
 	);
 	
-	for (U1 i = 0; i < 4; ++i)
+	for (i = 0; i < 4; ++i)
 	{
 	    U1 mcsNss = vht.MCSNss[i];
 	    
@@ -895,6 +896,7 @@ void InspectContextTrivial(const Context* src, U1 bit)
 void InspectRadiotap(const Context* src)
 {
     size_t c, i;
+    U1 f;
     const Context* tmp;
     
     puts("== MACHeader");
@@ -906,7 +908,7 @@ void InspectRadiotap(const Context* src)
     for (i = 0, tmp = src; i < c; tmp = tmp->Next, ++i)
     {
 	printf("==== 0x%08X %lu/%lu\n", tmp->Present, i + 1, c);
-	for (U1 f = 0; f < 32; ++f)
+	for (f = 0; f < 32; ++f)
 	    InspectContextTrivial(tmp, f);
     }
 }
