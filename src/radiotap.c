@@ -40,7 +40,7 @@ void ParseBeacon(const void* src, size_t nb, Pointer mp, ContextTrailer* dst)
 	case BEACON_SSID:
 	{
 	    char* buf = malloc(len + 1);
-	    strncpy(buf, (const char*)mp.U1, len);
+	    strncpy(buf, (const char*)lmp.U1, len);
 	    buf[len] = 0;
 	    
 	    printf(" %s", buf);
