@@ -4,7 +4,7 @@
 
 LIBS := pcap
 
-CFLAGS := -std=gnu99 -Oz
+CFLAGS := -std=gnu89 -Oz
 
 CFLAGS += -ffunction-sections -fdata-sections
 CFLAGS += -falign-functions -ftree-vectorize
