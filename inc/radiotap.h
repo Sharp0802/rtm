@@ -172,6 +172,14 @@ typedef struct
     U2  SequenceControl;
 } __pack__  MACHeader;
 
+typedef U1 CipherSuiteOUI[3];
+
+typedef struct
+{
+    CipherSuiteOUI OUI;
+    U1             Type;
+} __pack__ CipherSuite;
+
 typedef union
 {
     const void* V;
@@ -202,7 +210,32 @@ typedef enum : U1
 
 typedef struct
 {
-    // TODO
+    U1 GroupCipherSuite[4];
+    
+    U2 PairwiseCipherSuiteCount;
+    CipherSuite* PairwiseCipherSuiteList;
+    
+    U2 AuthKeyManagementSuiteCount;
+    CipherSuite* AuthKeyManagementList;
+    
+    U2 Capabilities;
+} RSN_1;
+
+typedef struct
+{
+    U2 Version;
+    union
+    {
+	RSN_1 V1;
+    };
+} RSN;
+
+typedef char SSID[32];
+
+typedef struct
+{
+    SSID SSID;
+    RSN  RSN;
 } BeaconFrame;
 
 typedef struct

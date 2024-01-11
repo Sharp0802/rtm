@@ -11,6 +11,52 @@ extern size_t GetFieldSize(U1 bit, Pointer src);
 
 extern void ParseField(U1 bit, Pointer src, Context* dst);
 
+void ParseRSN(Pointer mp, RSN* rsn)
+{
+    U2 i;
+    
+    switch (rsn->Version = *mp.U2++)
+    {
+    
+    case 1:
+    {
+	RSN_1 v;
+	
+	memcpy(v.GroupCipherSuite, mp.U4++, 4);
+	
+	v.PairwiseCipherSuiteCount = *mp.U2++;
+	v.PairwiseCipherSuiteList = malloc(v.PairwiseCipherSuiteCount * sizeof *v.PairwiseCipherSuiteList);
+	for (i = 0; i < v.PairwiseCipherSuiteCount; ++i)
+	    memcpy(v.PairwiseCipherSuiteList + i, mp.U4++, sizeof *v.PairwiseCipherSuiteList);
+	
+	v.AuthKeyManagementSuiteCount = *mp.U2++;
+	v.AuthKeyManagementList = malloc(v.AuthKeyManagementSuiteCount * sizeof *v.AuthKeyManagementList);
+	for (i = 0; i < v.AuthKeyManagementSuiteCount; ++i)
+	    memcpy(v.AuthKeyManagementList + i, mp.U4++, sizeof *v.AuthKeyManagementList);
+	
+	v.Capabilities = *mp.U2++;
+	
+	rsn->V1 = v;
+	
+	break;
+    }
+    
+    }
+}
+
+void ReleaseRSN(RSN* rsn)
+{
+    switch (rsn->Version)
+    {
+    case 1:
+    {
+	free(rsn->V1.PairwiseCipherSuiteList);
+	free(rsn->V1.AuthKeyManagementList);
+	break;
+    }
+    }
+}
+
 void ParseBeacon(const void* src, size_t nb, Pointer mp, ContextTrailer* dst)
 {
     /* fixed params */
@@ -20,6 +66,8 @@ void ParseBeacon(const void* src, size_t nb, Pointer mp, ContextTrailer* dst)
     
     U1 type;
     U1 len;
+    
+    RSN rsn;
     
     Pointer lmp;
     memset(&lmp, 0, sizeof lmp);
@@ -39,19 +87,14 @@ void ParseBeacon(const void* src, size_t nb, Pointer mp, ContextTrailer* dst)
 	{
 	case BEACON_SSID:
 	{
-	    char* buf = malloc(len + 1);
-	    strncpy(buf, (const char*)lmp.U1, len);
-	    buf[len] = 0;
-	    
-	    printf(" %s", buf);
-	    
-	    free(buf);
+	    strncpy(dst->BeaconFrame.SSID, (const char*)lmp.U1, 32);
 	    break;
 	}
 	
 	case BEACON_RSN:
 	{
-	    //TODO
+	    ParseRSN(lmp, &rsn);
+	    break;
 	}
 	}
     }
@@ -199,6 +242,19 @@ void ReleaseTrailer(ContextTrailer* trailer)
 {
     if (!trailer)
 	return;
+    
+    switch (trailer->FrameType)
+    {
+    case CT_NONE:
+	break;
+    
+    case CT_BEACON:
+	ReleaseRSN(&trailer->BeaconFrame.RSN);
+	break;
+	
+    case CT_DATA:
+	break;
+    }
     
     // TODO
     
