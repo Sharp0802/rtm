@@ -3,26 +3,68 @@
 #include <string.h>
 #include <setjmp.h>
 #include <pcap.h>
+#include <stdarg.h>
 
+#include "config.h"
 #include "radiotap.h"
+
+#define ARGS_FILE    (1)
+#define ARGS_IF      (2)
+
+#define CHECK_ARG__(arg, ch) (strcmp(arg,ch)==0)
+#define CHECK_ARG(arg, ch) (CHECK_ARG__(arg,ch)||CHECK_ARG__(arg,"-"ch)||CHECK_ARG__(arg,"/"ch))
 
 #define RED "\x1b[31m"
 #define RST "\x1b[0m"
 
 
 static jmp_buf s_Frame;
-static char s_Error[BUFSIZ];
+static char    s_Error[BUFSIZ];
 
-
-void Help(void)
+__attribute__((always_inline))
+inline static void Version(void)
 {
     puts(
-	    RED "invalid syntax" RST "\n"
-	    "syntax: rtm <ifname>\n"
-	    "sample: rtm wlan1"
+	    "RTM (rtm) " VERSION "                                                      \n"
+	    "Copyright (C) 2023 Yeong-won Seo                                           \n"
+	    "This is free software; see the source for copying conditions.  There is NO \n"
+	    "warranty; not even for MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE."
     );
 }
 
+__attribute__((always_inline))
+inline static void Help(void)
+{
+    puts(
+	    "+-------------+-----------------------------+\n"
+	    "| SYNTAX      | rtm (<param> <arg>?)+       |\n"
+	    "| SAMPLE      | rtm i wlan1                 |\n"
+	    "+-------------+-----------------------------+\n"
+	    "| PARAM       | DESC                        |\n"
+	    "|  ifname, i  | A name of monitor interface |\n"
+	    "|  file, f    | A pcap-dump file path       |\n"
+	    "|  version, v | Print version information   |\n"
+	    "|  help, h    | Print this message          |\n"
+	    "+-------------+-----------------------------+"
+    );
+}
+
+__attribute__((always_inline))
+inline static void SyntaxError(void)
+{
+    puts(RED "invalid syntax" RST);
+    Help();
+}
+
+__attribute__((noreturn, format(printf, 1, 2)))
+void FastFailF(const char* fmt, ...)
+{
+    va_list ap;
+    va_start(ap, fmt);
+    vsnprintf(s_Error, sizeof s_Error, fmt, ap);
+    va_end(ap);
+    longjmp(s_Frame, 1);
+}
 
 __attribute__((noreturn))
 void FastFail(const char* msg)
@@ -34,45 +76,102 @@ void FastFail(const char* msg)
 __attribute__((noreturn))
 void Interrupt(int sig)
 {
-    puts("e");
-    snprintf(s_Error, sizeof s_Error, "interrupted (%d)", sig);
+    snprintf(s_Error, sizeof s_Error, "\ninterrupted (%d)", sig);
     longjmp(s_Frame, 1);
 }
-
 
 
 int main(int argc, char* argv[])
 {
     static char err[PCAP_ERRBUF_SIZE];
     
-    pcap_t* dev;
+    char* target;
+    int mode;
+    
+    pcap_t            * dev;
     struct pcap_pkthdr* hdr;
-    const char* pkt;
+    const char        * pkt;
+    int i;
+    int pmod;
     
-    if (argc != 2)
+    dev = 0;
+    
+    /* INTERRUPT HANDLER */
+    if (setjmp(s_Frame))
     {
-	Help();
+	printf(RED "%s\n" RST, s_Error);
+	SyntaxError();
 	return 1;
     }
     
-    dev = pcap_open_live(argv[1], BUFSIZ, 1, 1, err);
-    if (!dev)
+    target = 0;
+    mode   = 0;
+    for (i = 1, pmod = 0; i < argc; ++i)
     {
-	printf(RED "pcap_open_live(): %s" RST, err);
-	return 1;
+	if (pmod)
+	{
+	    if (mode)
+	    {
+		FastFailF("conflicted target modifier: '%s'", argv[i]);
+	    }
+	    
+	    target = argv[i];
+	    mode   = pmod;
+	    pmod   = 0;
+	}
+	else if (CHECK_ARG(argv[i], "f"))
+	{
+	    pmod = ARGS_FILE;
+	}
+	else if (CHECK_ARG(argv[i], "i"))
+	{
+	    pmod = ARGS_IF;
+	}
+	else if (CHECK_ARG(argv[i], "v"))
+	{
+	    Version();
+	    return 0;
+	}
+	else if (CHECK_ARG(argv[i], "h"))
+	{
+	    Help();
+	    return 0;
+	}
+	else
+	{
+	    FastFailF("unexpected token: '%s'", argv[i]);
+	}
     }
+    if (!target)
+	FastFail("no target modifier");
     
+    /* INTERRUPT HANDLER */
     if (setjmp(s_Frame))
     {
 	printf(RED "%s\n" RST, s_Error);
 	goto EXIT;
     }
     
+    switch (mode) // NOLINT(*-multiway-paths-covered)
+    {
+    case ARGS_IF:
+	dev = pcap_open_live(target, BUFSIZ, 1, 1, err);
+	break;
+    case ARGS_FILE:
+	dev = pcap_open_offline(target, err);
+	break;
+    }
+    if (!dev)
+	FastFailF("pcap_open_live(): %s", err);
+    
+    
     signal(SIGINT, Interrupt);
+    signal(SIGTERM, Interrupt);
+#ifndef _WIN32
     signal(SIGKILL, Interrupt);
     signal(SIGQUIT, Interrupt);
     signal(SIGSTOP, Interrupt);
-    signal(SIGTERM, Interrupt);
+#endif
     
     while (1)
     {
@@ -92,6 +191,7 @@ int main(int argc, char* argv[])
     }
 
 EXIT:
-    pcap_close(dev);
+    if (dev)
+    	pcap_close(dev);
     return 0;
 }
