@@ -34,7 +34,13 @@ B := bin/rtm
 # TARGETS CONFIGURATION #
 #########################
 
-all: $(B)
+all: cfg bin
+
+cfg:
+	chmod 0777 cfg/version.sh
+	cfg/version.sh
+
+bin: $(B)
 	strip -s -R .comment -R .eh_frame -R .gnu.version -R .note.gnu.property -R .gnu.hash $<
 	@stat $<
 
@@ -49,5 +55,5 @@ obj/%.o: src/%.c
 clean:
 	rm -rf $(O) $(B)
 
-.PHONY: all clean
+.PHONY: all cfg bin clean
 
