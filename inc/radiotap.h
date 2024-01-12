@@ -63,15 +63,18 @@
 #define BEACON_RSN  48
 
 
+#if BYTE_ORDER == LITTLE_ENDIAN
 typedef uint8_t  U1;
 typedef uint16_t U2;
 typedef uint32_t U4;
 typedef uint64_t U8;
-
-typedef int8_t  S1;
-typedef int16_t S2;
-typedef int32_t S4;
-typedef int64_t S8;
+typedef int8_t   S1;
+typedef int16_t  S2;
+typedef int32_t  S4;
+typedef int64_t  S8;
+#else
+#error "Big-Endian is not supported yet."
+#endif
 
 typedef U1 BOOL;
 
@@ -234,12 +237,12 @@ typedef struct
 {
     SSID SSID;
     RSN  RSN;
-} BeaconFrame;
+}            BeaconFrame;
 
 typedef struct
 {
     size_t Length;
-} DataFrame;
+}            DataFrame;
 
 typedef struct
 {
@@ -249,7 +252,7 @@ typedef struct
 	BeaconFrame BeaconFrame;
 	DataFrame   DataFrame;
     };
-} ContextTrailer;
+}            ContextTrailer;
 
 typedef struct tag__ctx_t
 {
