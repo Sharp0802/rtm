@@ -1,17 +1,12 @@
 #include "radiotap.h"
 #include "errno.h"
 
-void PrintMAC(MAC mac)
-{
-    printf("%02x:%02x:%02x:%02x:%02x:%02x", mac[0], mac[1], mac[2], mac[3], mac[4], mac[5]);
-}
-
 
 extern size_t GetFieldSize(U1 bit, Pointer src);
 
 extern void ParseField(U1 bit, Pointer src, Context* dst);
 
-void ParseRSN(Pointer mp, RSN* rsn)
+static void ParseRSN(Pointer mp, RSN* rsn)
 {
     U2 i;
     
@@ -44,7 +39,7 @@ void ParseRSN(Pointer mp, RSN* rsn)
     }
 }
 
-void ReleaseRSN(RSN* rsn)
+static void ReleaseRSN(RSN* rsn)
 {
     switch (rsn->Version)
     {
@@ -57,7 +52,7 @@ void ReleaseRSN(RSN* rsn)
     }
 }
 
-void ParseBeacon(const void* src, size_t nb, Pointer mp, ContextTrailer* dst)
+static void ParseBeacon(const void* src, size_t nb, Pointer mp, ContextTrailer* dst)
 {
     /* fixed params */
     U8 __attribute__((unused)) tv       = *mp.U8++;
@@ -101,11 +96,9 @@ void ParseBeacon(const void* src, size_t nb, Pointer mp, ContextTrailer* dst)
 	    break;
 	}
     }
-    
-    printf("\n");
 }
 
-void ParseData(const void* src, size_t nb, Pointer mp, ContextTrailer* dst)
+static void ParseData(const void* src, size_t nb, Pointer mp, ContextTrailer* dst)
 {
     dst->FrameType = CT_DATA;
     memset(&dst->DataFrame, 0, sizeof dst->DataFrame);

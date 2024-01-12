@@ -7,6 +7,7 @@
 
 #include "config.h"
 #include "radiotap.h"
+#include "ui/ui.h"
 
 #define ARGS_FILE    (1)
 #define ARGS_IF      (2)
@@ -16,6 +17,21 @@
 
 #define RED "\x1b[31m"
 #define RST "\x1b[0m"
+
+#define EXCEPT()                     \
+if (setjmp(s_Frame))                 \
+{                                    \
+    printf(RED "%s\n" RST, s_Error); \
+    goto EXIT;                       \
+}
+
+#define EXCEPTX(fn)                  \
+if (setjmp(s_Frame))                 \
+{                                    \
+    printf(RED "%s\n" RST, s_Error); \
+    fn();                            \
+    goto EXIT;                       \
+}
 
 
 static jmp_buf s_Frame;
@@ -81,28 +97,62 @@ void Interrupt(int sig)
 }
 
 
-int main(int argc, char* argv[])
+void run(int mode, const char* target)
 {
     static char err[PCAP_ERRBUF_SIZE];
-    
-    char* target;
-    int mode;
     
     pcap_t            * dev;
     struct pcap_pkthdr* hdr;
     const char        * pkt;
-    int i;
-    int pmod;
     
     dev = 0;
     
-    /* INTERRUPT HANDLER */
-    if (setjmp(s_Frame))
+    EXCEPT()
+    
+    switch (mode) // NOLINT(*-multiway-paths-covered)
     {
-	printf(RED "%s\n" RST, s_Error);
-	SyntaxError();
-	return 1;
+    case ARGS_IF:
+	dev = pcap_open_live(target, BUFSIZ, 1, 1, err);
+	break;
+    case ARGS_FILE:
+	dev = pcap_open_offline(target, err);
+	break;
     }
+    if (!dev)
+	FastFailF("pcap_open_live(): %s", err);
+    
+    EXCEPT()
+    
+    while (1)
+    {
+	switch (pcap_next_ex(dev, &hdr, (const u_char**)&pkt))
+	{
+	case 0:
+	    continue;
+	case PCAP_ERROR:
+	case PCAP_ERROR_BREAK:
+	    FastFail(pcap_geterr(dev));
+	}
+	
+	Context* ctx = ParseContext(pkt, hdr->caplen);
+	HandleContext(ctx);
+	ReleaseContext(ctx);
+    }
+
+EXIT:
+    if (dev)
+    	pcap_close(dev);
+}
+
+int main(int argc, char* argv[])
+{
+    char* target;
+    int mode;
+    
+    int i;
+    int pmod;
+    
+    EXCEPTX(SyntaxError)
     
     target = 0;
     mode   = 0;
@@ -145,26 +195,6 @@ int main(int argc, char* argv[])
     if (!target)
 	FastFail("no target modifier");
     
-    /* INTERRUPT HANDLER */
-    if (setjmp(s_Frame))
-    {
-	printf(RED "%s\n" RST, s_Error);
-	goto EXIT;
-    }
-    
-    switch (mode) // NOLINT(*-multiway-paths-covered)
-    {
-    case ARGS_IF:
-	dev = pcap_open_live(target, BUFSIZ, 1, 1, err);
-	break;
-    case ARGS_FILE:
-	dev = pcap_open_offline(target, err);
-	break;
-    }
-    if (!dev)
-	FastFailF("pcap_open_live(): %s", err);
-    
-    
     signal(SIGINT, Interrupt);
     signal(SIGTERM, Interrupt);
 #ifndef _WIN32
@@ -173,25 +203,8 @@ int main(int argc, char* argv[])
     signal(SIGSTOP, Interrupt);
 #endif
     
-    while (1)
-    {
-	switch (pcap_next_ex(dev, &hdr, (const u_char**)&pkt))
-	{
-	case 0:
-	    continue;
-	case PCAP_ERROR:
-	case PCAP_ERROR_BREAK:
-	    FastFail(pcap_geterr(dev));
-	}
-	
-	Context* ctx = ParseContext(pkt, hdr->caplen);
-	// TODO : print
-	//InspectRadiotap(ctx);
-	ReleaseContext(ctx);
-    }
+    run(mode, target);
 
 EXIT:
-    if (dev)
-    	pcap_close(dev);
     return 0;
 }
