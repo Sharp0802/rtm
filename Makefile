@@ -26,7 +26,7 @@ LDFLAGS += --gc-sections
 CRT := $(addprefix /usr/lib/,crt1.o crti.o crtn.o)
 CRT += $(addprefix $(CCD),crtbegin.o crtend.o)
 
-C := $(wildcard src/*.c)
+C := $(shell find src/ -type f -name '*.c')
 O := $(subst src,obj,$(C:.c=.o))
 B := bin/rtm
 
@@ -37,8 +37,8 @@ B := bin/rtm
 all: cfg bin
 
 cfg:
-	chmod 0777 cfg/version.sh
-	cfg/version.sh
+	@chmod 0777 cfg/version.sh
+	@cfg/version.sh
 
 bin: $(B)
 	strip -s -R .comment -R .eh_frame -R .gnu.version -R .note.gnu.property -R .gnu.hash $<
@@ -49,7 +49,7 @@ $(B): $(O)
 	$(LD) $(LDFLAGS) $(CRT) $^ -o $@
 
 obj/%.o: src/%.c
-	@mkdir -p obj
+	@mkdir -p $(shell dirname $@)
 	$(CC) $(CFLAGS) -c $< -o $@
 
 clean:
