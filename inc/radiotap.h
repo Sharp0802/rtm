@@ -166,9 +166,7 @@ typedef struct
 	};
     };
     U2  Duration;
-    MAC DA;
-    MAC SA;
-    MAC BSS;
+    MAC Address[3];
     U2  SequenceControl;
 } __pack__  MACHeader;
 
@@ -240,7 +238,7 @@ typedef struct
 
 typedef struct
 {
-    // TODO
+    size_t Length;
 } DataFrame;
 
 typedef struct

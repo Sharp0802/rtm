@@ -107,9 +107,10 @@ void ParseData(const void* src, size_t nb, Pointer mp, ContextTrailer* dst)
     dst->FrameType = CT_DATA;
     memset(&dst->DataFrame, 0, sizeof dst->DataFrame);
     
-    // TODO
+    dst->DataFrame.Length = nb - (mp.U1 - (const U1*)src);
 }
 
+__attribute__((hot))
 Context* ParseContext(const void* src, size_t nb)
 {
     static __thread uint32_t flags[BUFSIZ];
@@ -195,7 +196,6 @@ Context* ParseContext(const void* src, size_t nb)
 	}
     }
     
-    
     if (rt.Length + sizeof ifr > nb)
 	goto E_SIZE;
     
@@ -207,13 +207,13 @@ Context* ParseContext(const void* src, size_t nb)
     ifr = *(MACHeader*)mp.V;
     mp.U1 += sizeof ifr;
     
+    /* ignore CCMP parameters */
+    
     /* parse inner frame */
     U1 type    = (ifr.Types >> 2) & 3;
     U1 subtype = ifr.Types >> 4;
     
-    PrintMAC(ifr.BSS);
-    
-    if (type == 2 && subtype == 0)
+    if (type == 0 && subtype == 0x1b)
 	parser = ParseData;
     else if (type == 0 && subtype == 8)
 	parser = ParseBeacon;
@@ -255,8 +255,6 @@ void ReleaseTrailer(ContextTrailer* trailer)
     case CT_DATA:
 	break;
     }
-    
-    // TODO
     
     free(trailer);
 }
