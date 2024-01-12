@@ -60,9 +60,9 @@ void ReleaseRSN(RSN* rsn)
 void ParseBeacon(const void* src, size_t nb, Pointer mp, ContextTrailer* dst)
 {
     /* fixed params */
-    U8 tv       = *mp.U8++;
-    U2 interval = *mp.U2++;
-    U2 compat   = *mp.U2++;
+    U8 __attribute__((unused)) tv       = *mp.U8++;
+    U2 __attribute__((unused)) interval = *mp.U2++;
+    U2 __attribute__((unused)) compat   = *mp.U2++;
     
     U1 type;
     U1 len;
@@ -96,6 +96,9 @@ void ParseBeacon(const void* src, size_t nb, Pointer mp, ContextTrailer* dst)
 	    ParseRSN(lmp, &rsn);
 	    break;
 	}
+	
+	default:
+	    break;
 	}
     }
     
