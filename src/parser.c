@@ -595,7 +595,7 @@ void InspectContextTrivial(const Context* src, U1 bit)
 		HAS_F(mcs.Flags, 0x80),
 		
 		/* MCS */
-		mcs.MCS
+		mcs.MCS_
 	);
 	
 	break;

@@ -109,7 +109,7 @@ typedef struct
 {
     U1 Known;
     U1 Flags;
-    U1 MCS;
+    U1 MCS_;
 } __field__ MCS;
 
 typedef struct
@@ -137,8 +137,8 @@ typedef struct
     U2 Precision;
     union
     {
-	U1 Unit;
-	U1 Position;
+        U1 Unit;
+        U1 Position;
     };
     U1 Flags;
 } __field__ Timestamp;
@@ -162,12 +162,12 @@ typedef struct
 {
     union
     {
-	U2 FrameControl;
-	struct
-	{
-	    U1 Types;
-	    U1 Flags;
-	};
+        U2 FrameControl;
+        struct
+        {
+            U1 Types;
+            U1 Flags;
+        };
     };
     U2  Duration;
     MAC Address[3];
@@ -195,20 +195,20 @@ typedef union
     const S2* S2;
     const S4* S4;
     const S8* S8;
-} Pointer;
+}          Pointer;
 
 typedef struct
 {
     size_t Size;
     size_t Alignment;
-} Field;
+} __pack__ Field;
 
 typedef enum : U1
 {
     CT_NONE,
     CT_BEACON,
     CT_DATA
-} FrameType;
+}          FrameType;
 
 typedef struct
 {
@@ -221,16 +221,16 @@ typedef struct
     CipherSuite* AuthKeyManagementList;
     
     U2 Capabilities;
-} RSN_1;
+} __pack__ RSN_1;
 
 typedef struct
 {
     U2 Version;
     union
     {
-	RSN_1 V1;
+        RSN_1 V1;
     };
-} RSN;
+} __pack__ RSN;
 
 typedef char SSID[32];
 
@@ -238,22 +238,22 @@ typedef struct
 {
     SSID SSID;
     RSN  RSN;
-}            BeaconFrame;
+} __pack__   BeaconFrame;
 
 typedef struct
 {
     size_t Length;
-}            DataFrame;
+} __pack__   DataFrame;
 
 typedef struct
 {
     FrameType FrameType;
     union
     {
-	BeaconFrame BeaconFrame;
-	DataFrame   DataFrame;
+        BeaconFrame BeaconFrame;
+        DataFrame   DataFrame;
     };
-}            ContextTrailer;
+} __pack__   ContextTrailer;
 
 typedef struct tag__ctx_t
 {
@@ -291,7 +291,7 @@ typedef struct tag__ctx_t
     XChannel  XChannel;
     
     ContextTrailer* Trailer;
-} Context;
+} __pack__ Context;
 
 #define RESERVED { 0, 0 }
 
