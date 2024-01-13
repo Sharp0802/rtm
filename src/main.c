@@ -5,12 +5,12 @@
 #include <pcap.h>
 #include <stdarg.h>
 
+#include "defs.h"
 #include "config.h"
 #include "radiotap.h"
-#include "ui/ui.h"
 
-#define ARGS_FILE    (1)
-#define ARGS_IF      (2)
+#define ARGS_FILE (1)
+#define ARGS_IF   (2)
 
 #define CHECK_ARG__(arg, ch) (strcmp(arg,ch)==0)
 #define CHECK_ARG(arg, ch) (CHECK_ARG__(arg,ch)||CHECK_ARG__(arg,"-"ch)||CHECK_ARG__(arg,"/"ch))
@@ -25,6 +25,14 @@ if (setjmp(s_Frame))                 \
     goto EXIT;                       \
 }
 
+#define EXCEPTF(fn)                  \
+if (setjmp(s_Frame))                 \
+{                                    \
+    printf(RED "%s\n" RST, s_Error); \
+    fn;                              \
+    goto EXIT;                       \
+}
+
 #define EXCEPTX(fn)                  \
 if (setjmp(s_Frame))                 \
 {                                    \
@@ -36,41 +44,6 @@ if (setjmp(s_Frame))                 \
 
 static jmp_buf s_Frame;
 static char    s_Error[BUFSIZ];
-
-__attribute__((always_inline))
-inline static void Version(void)
-{
-    puts(
-	    "RTM (rtm) " VERSION "                                                      \n"
-	    "Copyright (C) 2023 Yeong-won Seo                                           \n"
-	    "This is free software; see the source for copying conditions.  There is NO \n"
-	    "warranty; not even for MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE."
-    );
-}
-
-__attribute__((always_inline))
-inline static void Help(void)
-{
-    puts(
-	    "+-------------+-----------------------------+\n"
-	    "| SYNTAX      | rtm (<param> <arg>?)+       |\n"
-	    "| SAMPLE      | rtm i wlan1                 |\n"
-	    "+-------------+-----------------------------+\n"
-	    "| PARAM       | DESC                        |\n"
-	    "|  ifname, i  | A name of monitor interface |\n"
-	    "|  file, f    | A pcap-dump file path       |\n"
-	    "|  version, v | Print version information   |\n"
-	    "|  help, h    | Print this message          |\n"
-	    "+-------------+-----------------------------+"
-    );
-}
-
-__attribute__((always_inline))
-inline static void SyntaxError(void)
-{
-    puts(RED "invalid syntax" RST);
-    Help();
-}
 
 __attribute__((noreturn, format(printf, 1, 2)))
 void FastFailF(const char* fmt, ...)
@@ -96,8 +69,21 @@ void Interrupt(int sig)
     longjmp(s_Frame, 1);
 }
 
+EXPORT const char* GetVersionString(void)
+{
+    return VERSION;
+}
 
-void run(int mode, const char* target)
+EXPORT const char* GetLastErrorString(void)
+{
+    return s_Error;
+}
+
+EXPORT int Run(
+	int mode,
+	const char* __restrict target,
+	volatile const unsigned char* __restrict token,
+	void (* callback)(const Context*))
 {
     static char err[PCAP_ERRBUF_SIZE];
     
@@ -105,9 +91,15 @@ void run(int mode, const char* target)
     struct pcap_pkthdr* hdr;
     const char        * pkt;
     
-    dev = 0;
+    int ret;
     
-    EXCEPT()
+    dev = 0;
+    ret = 0;
+    
+    EXCEPTF({ ret = 1; })
+    
+    if (!callback || !target)
+	FastFail("target and callback cannot be null");
     
     switch (mode) // NOLINT(*-multiway-paths-covered)
     {
@@ -121,9 +113,9 @@ void run(int mode, const char* target)
     if (!dev)
 	FastFailF("pcap_open_live(): %s", err);
     
-    EXCEPT()
+    EXCEPTF({ ret = 1; })
     
-    while (1)
+    while (!token || *token)
     {
 	switch (pcap_next_ex(dev, &hdr, (const u_char**)&pkt))
 	{
@@ -135,13 +127,50 @@ void run(int mode, const char* target)
 	}
 	
 	Context* ctx = ParseContext(pkt, hdr->caplen);
-	HandleContext(ctx);
+	callback(ctx);
 	ReleaseContext(ctx);
     }
 
 EXIT:
     if (dev)
-    	pcap_close(dev);
+	pcap_close(dev);
+    
+    return ret;
+}
+
+#ifdef STANDALONE
+
+void Version(void)
+{
+    puts(
+	    "RTM (rtm) " VERSION "                                                      \n"
+	    "Copyright (C) 2023 Yeong-won Seo                                           \n"
+	    "This is free software; see the source for copying conditions.  There is NO \n"
+	    "warranty; not even for MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE."
+    );
+}
+
+void Help(void)
+{
+    puts(
+	    "+-------------+-----------------------------+\n"
+	    "| SYNTAX      | rtm (<param> <arg>?)+       |\n"
+	    "| SAMPLE      | rtm i wlan1                 |\n"
+	    "+-------------+-----------------------------+\n"
+	    "| PARAM       | DESC                        |\n"
+	    "|  ifname, i  | A name of monitor interface |\n"
+	    "|  file, f    | A pcap-dump file path       |\n"
+	    "|  version, v | Print version information   |\n"
+	    "|  help, h    | Print this message          |\n"
+	    "+-------------+-----------------------------+"
+    );
+}
+
+__attribute__((always_inline))
+inline static void SyntaxError(void)
+{
+    puts(RED "invalid syntax" RST);
+    Help();
 }
 
 int main(int argc, char* argv[])
@@ -203,8 +232,10 @@ int main(int argc, char* argv[])
     signal(SIGSTOP, Interrupt);
 #endif
     
-    run(mode, target);
+    Run(mode, target, NULL, InspectRadiotap);
 
 EXIT:
     return 0;
 }
+
+#endif

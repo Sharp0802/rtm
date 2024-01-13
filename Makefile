@@ -13,22 +13,19 @@ CFLAGS += -march=native
 CFLAGS += -W -Wall -Wextra
 CFLAGS += -I./inc/
 
+CFLAGS += -fpic
+
 #########################
 #  LD/CC CONFIGURATION  #
 #########################
 
-CCD := $(shell find /usr/lib/gcc/x86_64-*/*.*.* -maxdepth 0 | sort -r | head -1)/
-
-LDFLAGS += -L$(CCD)
-LDFLAGS += -lc -lgcc -lgcc_s $(addprefix -l,$(LIBS))
-LDFLAGS += --gc-sections
-
-CRT := $(addprefix /usr/lib/,crt1.o crti.o crtn.o)
-CRT += $(addprefix $(CCD),crtbegin.o crtend.o)
+LDFLAGS := -shared -fpic -lc -lgcc -lgcc_s $(addprefix -l,$(LIBS))
+LDFLAGS += -march=native
+LDFLAGS += -Wl,--gc-sections
 
 C := $(shell find src/ -type f -name '*.c')
 O := $(subst src,obj,$(C:.c=.o))
-B := bin/rtm
+B := bin/librtm.so
 
 #########################
 # TARGETS CONFIGURATION #
@@ -41,12 +38,12 @@ cfg:
 	@cfg/version.sh
 
 bin: $(B)
-	strip -s -R .comment -R .eh_frame -R .gnu.version -R .note.gnu.property -R .gnu.hash $<
+	strip -R .comment -R .eh_frame -R .gnu.version -R .note.gnu.property -R .gnu.hash $<
 	@stat $<
 
 $(B): $(O)
 	@mkdir -p bin
-	$(LD) $(LDFLAGS) $(CRT) $^ -o $@
+	$(CC) $(LDFLAGS) $^ -o $@
 
 obj/%.o: src/%.c
 	@mkdir -p $(shell dirname $@)

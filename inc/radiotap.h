@@ -6,6 +6,7 @@
 #include <malloc.h>
 #include <pcap.h>
 
+#include "defs.h"
 
 #define __pack__ __attribute__((packed)) //NOLINT
 #define __field__ __attribute__((packed)) //NOLINT
@@ -303,6 +304,7 @@ void ReleaseContext(Context* context);
 
 void ReleaseTrailer(ContextTrailer* trailer);
 
-void InspectRadiotap(const Context* src);
+/* TODO: merge into managed assembly */
+EXPORT void InspectRadiotap(const Context* src);
 
 #endif
