@@ -31,7 +31,7 @@ B := bin/librtm.so
 # TARGETS CONFIGURATION #
 #########################
 
-all: cfg bin
+all: cfg bin man
 
 cfg:
 	@chmod 0777 cfg/version.sh
@@ -39,7 +39,12 @@ cfg:
 
 bin: $(B)
 	strip -R .comment -R .eh_frame -R .gnu.version -R .note.gnu.property -R .gnu.hash $<
+	@echo ""
 	@stat $<
+
+man:
+	@echo ""
+	dotnet build src/man/RTM.sln
 
 $(B): $(O)
 	@mkdir -p bin
