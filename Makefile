@@ -5,23 +5,17 @@
 LIBS := pcap
 
 CFLAGS := -std=gnu89 -Oz
-
-CFLAGS += -ffunction-sections -fdata-sections
-CFLAGS += -falign-functions -ftree-vectorize
 CFLAGS += -march=native
-
 CFLAGS += -W -Wall -Wextra
 CFLAGS += -I./inc/
-
 CFLAGS += -fpic
 
 #########################
 #  LD/CC CONFIGURATION  #
 #########################
 
-LDFLAGS := -shared -fpic -lc -lgcc -lgcc_s $(addprefix -l,$(LIBS))
+LDFLAGS := -shared -fpic $(addprefix -l,$(LIBS))
 LDFLAGS += -march=native
-LDFLAGS += -Wl,--gc-sections
 
 C := $(shell find src/ -type f -name '*.c')
 O := $(subst src,obj,$(C:.c=.o))
@@ -38,7 +32,6 @@ cfg:
 	@cfg/version.sh
 
 bin: $(B)
-	strip -R .comment -R .eh_frame -R .gnu.version -R .note.gnu.property -R .gnu.hash $<
 	@echo ""
 	@stat $<
 
@@ -49,6 +42,7 @@ man:
 $(B): $(O)
 	@mkdir -p bin
 	$(CC) $(LDFLAGS) $^ -o $@
+	$(CC) -march=native -lpcap $^ -o bin/rtm
 
 obj/%.o: src/%.c
 	@mkdir -p $(shell dirname $@)

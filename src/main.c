@@ -98,47 +98,70 @@ EXPORT int Run(
     
     EXCEPTF({ ret = 1; })
     
+    puts("service initializing");
+    
     if (!callback || !target)
 	FastFail("target and callback cannot be null");
     
     switch (mode) // NOLINT(*-multiway-paths-covered)
     {
+    case ARGS_FILE:
+        dev = pcap_open_offline(target, err);
+        break;
     case ARGS_IF:
 	dev = pcap_open_live(target, BUFSIZ, 1, 1, err);
-	break;
-    case ARGS_FILE:
-	dev = pcap_open_offline(target, err);
 	break;
     }
     if (!dev)
 	FastFailF("pcap_open_live(): %s", err);
     
+    puts("device initialized");
+    
     EXCEPTF({ ret = 1; })
+    
+    puts("service initialized");
     
     while (!token || *token)
     {
+#ifdef DEBUG
+        puts("entry");
+#endif
+ 
 	switch (pcap_next_ex(dev, &hdr, (const u_char**)&pkt))
 	{
 	case 0:
 	    continue;
 	case PCAP_ERROR:
 	case PCAP_ERROR_BREAK:
-	    FastFail(pcap_geterr(dev));
+            FastFailF("pcap_next_ex(): %s", pcap_geterr(dev));
 	}
+
+#ifdef DEBUG
+        puts("parsing");
+#endif
 	
 	Context* ctx = ParseContext(pkt, hdr->caplen);
+        if (!ctx)
+        {
+            perror("ParseContext()");
+            continue;
+        }
+        
+#ifdef DEBUG
+        puts("call-back");
+#endif
+        
 	callback(ctx);
-	ReleaseContext(ctx);
     }
 
 EXIT:
     if (dev)
 	pcap_close(dev);
     
+    puts("service expired");
+    
     return ret;
 }
-
-#ifdef STANDALONE
 
 void Version(void)
 {
@@ -237,5 +260,3 @@ int main(int argc, char* argv[])
 EXIT:
     return 0;
 }
-
-#endif

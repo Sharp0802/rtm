@@ -893,7 +893,7 @@ void InspectContextTrivial(const Context* src, U1 bit)
     }
 }
 
-void InspectRadiotap(const Context* src)
+EXPORT void InspectRadiotap(const Context* src)
 {
     size_t c, i;
     U1 f;

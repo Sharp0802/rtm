@@ -236,12 +236,14 @@ typedef char SSID[32];
 
 typedef struct
 {
+    MACHeader MACHeader;
     SSID SSID;
     RSN  RSN;
 } __pack__   BeaconFrame;
 
 typedef struct
 {
+    MACHeader MACHeader;
     size_t Length;
 } __pack__   DataFrame;
 
@@ -300,11 +302,11 @@ extern const Field g_Fields[32];
 
 Context* ParseContext(const void* src, size_t nb);
 
-void ReleaseContext(Context* context);
+EXPORT void ReleaseContext(Context* context);
 
 void ReleaseTrailer(ContextTrailer* trailer);
 
 /* TODO: merge into managed assembly */
-EXPORT void InspectRadiotap(const Context* src);
+void InspectRadiotap(const Context* src);
 
 #endif

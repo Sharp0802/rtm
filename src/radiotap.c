@@ -52,7 +52,7 @@ static void ReleaseRSN(RSN* rsn)
     }
 }
 
-static void ParseBeacon(const void* src, size_t nb, Pointer mp, ContextTrailer* dst)
+static void ParseBeacon(const void* src, size_t nb, Pointer mp, MACHeader mac, ContextTrailer* dst)
 {
     /* fixed params */
     U8 __attribute__((unused)) tv       = *mp.U8++;
@@ -69,6 +69,7 @@ static void ParseBeacon(const void* src, size_t nb, Pointer mp, ContextTrailer* 
     
     dst->FrameType = CT_BEACON;
     memset(&dst->BeaconFrame, 0, sizeof dst->BeaconFrame);
+    dst->BeaconFrame.MACHeader = mac;
     
     /* tagged params */
     for (; (mp.U1 - (const U1*)src) < (ssize_t)(nb - 4);)
@@ -82,7 +83,8 @@ static void ParseBeacon(const void* src, size_t nb, Pointer mp, ContextTrailer* 
 	{
 	case BEACON_SSID:
 	{
-	    strncpy(dst->BeaconFrame.SSID, (const char*)lmp.U1, 32);
+	    memcpy(dst->BeaconFrame.SSID, (const char*)lmp.U1, len);
+            dst->BeaconFrame.SSID[len] = 0;
 	    break;
 	}
 	
@@ -98,10 +100,11 @@ static void ParseBeacon(const void* src, size_t nb, Pointer mp, ContextTrailer* 
     }
 }
 
-static void ParseData(const void* src, size_t nb, Pointer mp, ContextTrailer* dst)
+static void ParseData(const void* src, size_t nb, Pointer mp, MACHeader mac, ContextTrailer* dst)
 {
     dst->FrameType = CT_DATA;
     memset(&dst->DataFrame, 0, sizeof dst->DataFrame);
+    dst->DataFrame.MACHeader = mac;
     
     dst->DataFrame.Length = nb - (mp.U1 - (const U1*)src);
 }
@@ -116,7 +119,7 @@ Context* ParseContext(const void* src, size_t nb)
     MACHeader                ifr;
     Field                    field;
     size_t                   misaligned;
-    void (* parser)(const void*, size_t, Pointer, ContextTrailer*);
+    void (* parser)(const void*, size_t, Pointer, MACHeader, ContextTrailer*);
     U4 i;
     U1 f;
     
@@ -124,7 +127,10 @@ Context* ParseContext(const void* src, size_t nb)
     Context* context;
     
     if (sizeof rt > nb)
-	goto E_SIZE;
+    {
+        errno = E2BIG;
+        goto FAULT;
+    }
     
     /*
      * union with different field Size is undefined.
@@ -136,7 +142,10 @@ Context* ParseContext(const void* src, size_t nb)
     rt = *(const Radiotap*)mp.V;
     
     if (rt.Length > nb)
-	goto E_SIZE;
+    {
+        errno = E2BIG;
+        goto FAULT;
+    }
     
     /* revision must be set to 0 */
     if (rt.Revision)
@@ -180,7 +189,8 @@ Context* ParseContext(const void* src, size_t nb)
 	    if ((mp.U1 - (const U1*)src) > (ssize_t)nb)
 	    {
 		ReleaseContext(root);
-		goto E_SIZE;
+                errno = EFAULT;
+		goto FAULT;
 	    }
 	    
 	    ParseField(f, mp, context);
@@ -193,7 +203,10 @@ Context* ParseContext(const void* src, size_t nb)
     }
     
     if (rt.Length + sizeof ifr > nb)
-	goto E_SIZE;
+    {
+        errno = E2BIG;
+        goto FAULT;
+    }
     
     /* reset address (radiotap) */
     mp.V = src;
@@ -222,15 +235,14 @@ Context* ParseContext(const void* src, size_t nb)
     if (parser)
     {
 	root->Trailer = malloc(sizeof *root->Trailer);
-	parser(src, nb, mp, root->Trailer);
+	parser(src, nb, mp, ifr, root->Trailer);
     }
     
     errno = 0;
     return root;
 
-E_SIZE:
+FAULT:
     root = 0;
-    errno = EFAULT;
     return root;
 }
 
@@ -255,7 +267,7 @@ void ReleaseTrailer(ContextTrailer* trailer)
     free(trailer);
 }
 
-void ReleaseContext(Context* context)
+EXPORT void ReleaseContext(Context* context)
 {
     if (!context)
 	return;
