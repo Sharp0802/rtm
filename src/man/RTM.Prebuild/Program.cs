@@ -20,6 +20,12 @@ builder.AppendLine(
     
     global using size_t = nuint;
     
+    global using BOOL = byte;
+    
+    global using Mbps = float;
+    global using dBm = sbyte;
+    global using dB = ushort;
+    
     using System;
     using System.Runtime.InteropServices;
     
@@ -35,8 +41,15 @@ foreach (Match match in StructRegex().Matches(file))
     tmp.Clear();
     foreach (var s in fields.Value.Split('\n', StringSplitOptions.RemoveEmptyEntries))
     {
-        var line = s.TrimStart();
-        tmp.Append("    ");
+        var line = s.TrimStart().Replace("struct tag__ctx_t", "Context");
+
+        if (string.IsNullOrWhiteSpace(line))
+        {
+            tmp.AppendLine();
+            continue;
+        }
+        
+        tmp.Append("    public ");
         if (line.Contains('['))
             tmp.Append("fixed ");
         tmp.AppendLine(line);
@@ -57,6 +70,6 @@ File.WriteAllText("../RTM/Defs.g.cs", builder.ToString(), Encoding.UTF8);
 
 internal partial class Program
 {
-    [GeneratedRegex(@"typedef struct\s+{(?<fields>[^}]+)}\s*(__field__)?(__pack__)?\s*(?<tag>[^;]+)")]
+    [GeneratedRegex(@"typedef struct\s*[^{]*\s*{(?<fields>[^}]+)}\s*(__field__)?(__pack__)?\s*(?<tag>[^;]+)")]
     private static partial Regex StructRegex();
 }

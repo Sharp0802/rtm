@@ -2,7 +2,40 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:rtm="clr-namespace:RTM"
         mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="450"
+        x:DataType="rtm:MainWindow"
         x:Class="RTM.MainWindow">
-    Welcome to Avalonia!
+    <Grid RowDefinitions="Auto,*" ColumnDefinitions="*,*">
+        <Menu Grid.Row="0" Grid.Column="0" Grid.ColumnSpan="2" Margin="5">
+            <ComboBox x:Name="InterfaceSelector" SelectionChanged="OnSelectionChanged"/>
+            <TextBox x:Name="FileNameField" IsEnabled="False" MaxLines="1"/>
+            <MenuItem Header="Start" 
+                      x:Name="StartButton"
+                      IsEnabled="True" 
+                      Click="Start"/>
+            <MenuItem Header="Stop" 
+                      x:Name="StopButton" 
+                      IsEnabled="False" 
+                      Click="Stop"/>
+        </Menu> 
+        <DataGrid Grid.Row="1" 
+                  Grid.Column="0"  
+                  Margin="5"
+                  BorderBrush="Gray"
+                  BorderThickness="1"
+                  AutoGenerateColumns="True" 
+                  IsReadOnly="True" 
+                  GridLinesVisibility="All"
+                  x:Name="BeaconGrid"/>
+        <DataGrid Grid.Row="1" 
+                  Grid.Column="1" 
+                  Margin="5"
+                  BorderBrush="Gray"
+                  BorderThickness="1"
+                  AutoGenerateColumns="True" 
+                  IsReadOnly="True" 
+                  GridLinesVisibility="All"
+                  x:Name="DataGrid"/>
+    </Grid>
 </Window>
