@@ -1,5 +1,6 @@
 ﻿using Avalonia;
 using System;
+using Avalonia.ReactiveUI;
 
 namespace RTM;
 
@@ -14,6 +15,7 @@ internal static class Program
         => AppBuilder
           .Configure<App>()
           .UsePlatformDetect()
+          .UseReactiveUI()
           .WithInterFont()
           .LogToTrace();
 }

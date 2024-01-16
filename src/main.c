@@ -143,7 +143,9 @@ EXPORT int Run(
 	Context* ctx = ParseContext(pkt, hdr->caplen);
         if (!ctx)
         {
+#ifdef DEBUG
             perror("ParseContext()");
+#endif
             continue;
         }
         

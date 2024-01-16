@@ -1,8 +1,25 @@
+global using Mbps = float;
+global using dBm = sbyte;
+global using dB = ushort;
 using System;
 using System.Runtime.InteropServices;
-using System.Text;
 
-namespace RTM;
+namespace RTM.Models;
+
+public enum CipherSuites : uint
+{
+    CCMP   = 0x04AC0F00,
+    TKIP   = 0x02AC0F00,
+    WEP40  = 0x01AC0F00,
+    WEP104 = 0x05AC0F00
+}
+
+public enum AuthKeyManagementSuites : uint
+{
+    IEEE8021X   = 0x01AC0F00,
+    PSK         = 0x02AC0F00,
+    FTOver8021X = 0x03AC0F00
+}
 
 public enum FrameType : byte
 {
@@ -20,7 +37,7 @@ public unsafe struct CipherSuiteOUI
 [StructLayout(LayoutKind.Sequential, Pack = 1)]
 public unsafe struct MAC : IEquatable<MAC>
 {
-    public fixed U1 Value[6];
+    public fixed byte Value[6];
 
     public override string ToString()
     {
@@ -52,12 +69,12 @@ public unsafe struct MAC : IEquatable<MAC>
 [StructLayout(LayoutKind.Sequential, Pack = 1)]
 public struct MACHeader
 {
-    public U2  FrameControl;
-    public U2  Duration;
-    public MAC Address0;
-    public MAC Address1;
-    public MAC Address2;
-    public U2  SequenceControl;
+    public ushort FrameControl;
+    public ushort Duration;
+    public MAC    Address0;
+    public MAC    Address1;
+    public MAC    Address2;
+    public ushort SequenceControl;
 }
 
 [StructLayout(LayoutKind.Sequential, Pack = 1)]

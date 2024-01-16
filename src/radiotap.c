@@ -91,6 +91,7 @@ static void ParseBeacon(const void* src, size_t nb, Pointer mp, MACHeader mac, C
 	case BEACON_RSN:
 	{
 	    ParseRSN(lmp, &rsn);
+        dst->BeaconFrame.RSN = rsn;
 	    break;
 	}
 	

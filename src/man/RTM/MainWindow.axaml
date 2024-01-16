@@ -2,22 +2,29 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-        xmlns:rtm="clr-namespace:RTM"
+        xmlns:rtmv="clr-namespace:RTM.ViewModels"
         mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="450"
-        x:DataType="rtm:MainWindow"
+        x:CompileBindings="True"
+        x:DataType="rtmv:MainWindowViewModel"
         x:Class="RTM.MainWindow">
-    <Grid RowDefinitions="Auto,*" ColumnDefinitions="*,*">
+    
+    <Design.DataContext>
+        <rtmv:MainWindowViewModel />
+    </Design.DataContext>
+    
+    <Grid RowDefinitions="Auto,*" ColumnDefinitions="*,Auto" DataContext="{Binding SummaryViewModel}">
         <Menu Grid.Row="0" Grid.Column="0" Grid.ColumnSpan="2" Margin="5">
-            <ComboBox x:Name="InterfaceSelector" SelectionChanged="OnSelectionChanged"/>
-            <TextBox x:Name="FileNameField" IsEnabled="False" MaxLines="1"/>
-            <MenuItem Header="Start" 
+            <ComboBox x:Name="InterfaceSelector" 
+                      SelectionChanged="OnSelectionChanged"/>
+            <TextBox x:Name="FileNameField" 
+                     IsEnabled="False" 
+                     MaxLines="1"/>
+            <MenuItem Header="Start"
                       x:Name="StartButton"
-                      IsEnabled="True" 
-                      Click="Start"/>
+                      Click="StartButton_OnClick"/>
             <MenuItem Header="Stop" 
-                      x:Name="StopButton" 
-                      IsEnabled="False" 
-                      Click="Stop"/>
+                      x:Name="StopButton"
+                      Click="StopButton_OnClick"/>
         </Menu> 
         <DataGrid Grid.Row="1" 
                   Grid.Column="0"  
