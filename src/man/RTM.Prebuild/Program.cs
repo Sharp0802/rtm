@@ -55,7 +55,7 @@ foreach (Match match in StructRegex().Matches(file))
         $$"""
           [Serializable]
           [StructLayout(LayoutKind.Sequential, Pack = 1)]
-          public unsafe struct {{tag}}
+          public unsafe partial struct {{tag}}
           {
           {{tmp}}}
           

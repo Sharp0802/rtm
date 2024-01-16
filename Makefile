@@ -42,7 +42,6 @@ man:
 $(B): $(O)
 	@mkdir -p bin
 	$(CC) $(LDFLAGS) $^ -o $@
-	$(CC) -march=native -lpcap $^ -o bin/rtm
 
 obj/%.o: src/%.c
 	@mkdir -p $(shell dirname $@)

@@ -7,9 +7,6 @@ internal unsafe partial class Native
 {
     private const string Library = "librtm.so";
 
-    [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
-    internal delegate void Callback(Context* context);
-
     [LibraryImport(Library)]
     internal static partial byte* GetVersionString();
 
@@ -18,15 +15,16 @@ internal unsafe partial class Native
 
     [LibraryImport(Library)]
     internal static partial int Run(
-        int                                        mode,
-        byte*                                      target,
-        byte*                                      token,
-        delegate* unmanaged[Cdecl]<Context*, void> callback
+        int                                               mode,
+        byte*                                             target,
+        byte*                                             token,
+        delegate* unmanaged[Cdecl]<Context*, void*, void> callback,
+        void*                                             arg
     );
 
     [LibraryImport(Library)]
     internal static partial void ReleaseContext(Context* context);
-    
+
     [LibraryImport(Library)]
     internal static partial void InspectRadiotap(Context* src);
 }

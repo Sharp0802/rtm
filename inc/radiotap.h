@@ -61,6 +61,7 @@
 #define IFR_HTC_ORDER      ((uint8_t)(1U << 0))
 
 #define BEACON_SSID 0
+#define BEACON_DS   3
 #define BEACON_RSN  48
 
 
@@ -212,7 +213,7 @@ typedef enum : U1
 
 typedef struct
 {
-    U1 GroupCipherSuite[4];
+    CipherSuite GroupCipherSuite;
     
     U2 PairwiseCipherSuiteCount;
     CipherSuite* PairwiseCipherSuiteList;
@@ -239,6 +240,7 @@ typedef struct
     MACHeader MACHeader;
     SSID SSID;
     RSN  RSN;
+    U1   Channel;
 } __pack__   BeaconFrame;
 
 typedef struct

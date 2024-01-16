@@ -83,7 +83,8 @@ EXPORT int Run(
 	int mode,
 	const char* __restrict target,
 	volatile const unsigned char* __restrict token,
-	void (* callback)(const Context*))
+	void (* callback)(const Context*, void*),
+    void* arg)
 {
     static char err[PCAP_ERRBUF_SIZE];
     
@@ -153,7 +154,7 @@ EXPORT int Run(
         puts("call-back");
 #endif
         
-	callback(ctx);
+	callback(ctx, arg);
     }
 
 EXIT:
@@ -164,6 +165,8 @@ EXIT:
     
     return ret;
 }
+
+#ifdef STANDALONE
 
 void Version(void)
 {
@@ -262,3 +265,5 @@ int main(int argc, char* argv[])
 EXIT:
     return 0;
 }
+
+#endif

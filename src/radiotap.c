@@ -87,6 +87,12 @@ static void ParseBeacon(const void* src, size_t nb, Pointer mp, MACHeader mac, C
             dst->BeaconFrame.SSID[len] = 0;
 	    break;
 	}
+
+    case BEACON_DS:
+    {
+        dst->BeaconFrame.Channel = *lmp.U1;
+        break;
+    }
 	
 	case BEACON_RSN:
 	{

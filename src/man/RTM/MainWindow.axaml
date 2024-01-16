@@ -8,23 +8,22 @@
         x:DataType="rtmv:MainWindowViewModel"
         x:Class="RTM.MainWindow">
     
-    <Design.DataContext>
+    <Window.DataContext>
         <rtmv:MainWindowViewModel />
-    </Design.DataContext>
+    </Window.DataContext>
     
     <Grid RowDefinitions="Auto,*" ColumnDefinitions="*,Auto" DataContext="{Binding SummaryViewModel}">
         <Menu Grid.Row="0" Grid.Column="0" Grid.ColumnSpan="2" Margin="5">
-            <ComboBox x:Name="InterfaceSelector" 
+            <ComboBox ItemsSource="{Binding Interfaces}"
+                      IsEnabled="{Binding !Alive}"
                       SelectionChanged="OnSelectionChanged"/>
-            <TextBox x:Name="FileNameField" 
-                     IsEnabled="False" 
-                     MaxLines="1"/>
             <MenuItem Header="Start"
-                      x:Name="StartButton"
-                      Click="StartButton_OnClick"/>
+                      IsEnabled="{Binding !Alive}"
+                      Command="{Binding Start}"/>
             <MenuItem Header="Stop" 
-                      x:Name="StopButton"
-                      Click="StopButton_OnClick"/>
+                      IsEnabled="{Binding Alive}"
+                      Command="{Binding Stop}"/>
+            <TextBlock Text="{Binding ChannelText}"/>
         </Menu> 
         <DataGrid Grid.Row="1" 
                   Grid.Column="0"  
@@ -34,7 +33,7 @@
                   AutoGenerateColumns="True" 
                   IsReadOnly="True" 
                   GridLinesVisibility="All"
-                  x:Name="BeaconGrid"/>
+                  ItemsSource="{Binding BeaconFrames, Mode=OneWay}"/>
         <DataGrid Grid.Row="1" 
                   Grid.Column="1" 
                   Margin="5"
@@ -43,6 +42,6 @@
                   AutoGenerateColumns="True" 
                   IsReadOnly="True" 
                   GridLinesVisibility="All"
-                  x:Name="DataGrid"/>
+                  ItemsSource="{Binding DataFrames, Mode=OneWay}"/>
     </Grid>
 </Window>
