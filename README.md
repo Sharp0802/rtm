@@ -1,6 +1,6 @@
 # RTM
 
-![img/screenshot.png]()
+![](img/screenshot.png)
 
 RTM is simple RadioTap Monitoring tool written in C/C#.
 
@@ -8,3 +8,11 @@ RTM is simple RadioTap Monitoring tool written in C/C#.
 
 - GCC 5.0 or later
 - dotnet 8.0 or later
+
+## How to Run?
+
+```
+make
+sudo bin/net8.0/RTM
+```
+
